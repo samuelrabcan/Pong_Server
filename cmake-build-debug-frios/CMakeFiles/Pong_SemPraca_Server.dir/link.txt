@@ -1,0 +1,1 @@
+/usr/bin/cc -g CMakeFiles/Pong_SemPraca_Server.dir/main.c.o -o Pong_SemPraca_Server  -lpthread 

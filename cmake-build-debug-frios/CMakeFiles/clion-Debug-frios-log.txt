@@ -1,0 +1,4 @@
+/usr/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" -S /tmp/Pong_SemPraca_Server -B /tmp/Pong_SemPraca_Server/cmake-build-debug-frios
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /tmp/Pong_SemPraca_Server/cmake-build-debug-frios
