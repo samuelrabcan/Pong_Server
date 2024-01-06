@@ -38,7 +38,6 @@ int main(int argc, char *argv[])
     socklen_t clilen;
     char buffer[256];
     struct sockaddr_in serv_addr, cli_addr;
-    long n;
 
     if (argc < 2) {
         fprintf(stderr,"ERROR, no port provided\n");
@@ -63,7 +62,6 @@ int main(int argc, char *argv[])
 
     clilen = sizeof(cli_addr);
 
-    int playerCount = 0;
     socketPlayer1 = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
     if (socketPlayer1 < 0)
         error("ERROR on accept");
