@@ -13,6 +13,23 @@ void error(const char *msg)
     exit(1);
 }
 
+int sendMessage(int socket, char* message) {
+    if (write(socket, message, strlen(message)) < 0) {
+        printf("Chyba - send.\n");
+        return -1;
+    }
+    return 0;
+}
+
+int receiveMessage(int socket, char* buffer) {
+    bzero(buffer, 256);
+    if (read(socket, buffer, 255) < 0) {
+        printf("Chyba - recv.\n");
+        return -1;
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     int socketPlayer1;
@@ -21,7 +38,6 @@ int main(int argc, char *argv[])
     socklen_t clilen;
     char buffer[256];
     struct sockaddr_in serv_addr, cli_addr;
-    long n;
 
     if (argc < 2) {
         fprintf(stderr,"ERROR, no port provided\n");
@@ -42,63 +58,67 @@ int main(int argc, char *argv[])
     if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0)
         error("ERROR on binding");
 
-    listen(sockfd,5);
+    if (listen(sockfd,5) < 0) {
+        error("ERROR on listening");
+    }
 
     clilen = sizeof(cli_addr);
-//
-    //int playerCount = 0;
+
     socketPlayer1 = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
     if (socketPlayer1 < 0)
         error("ERROR on accept");
 
-    // Pošli správu prvemu hráčovi, že je hráč 1
-    char *player1Message = "hrac1";
-    write(socketPlayer1, player1Message, strlen(player1Message));
-
-    n = read(socketPlayer1, buffer, 255);
-    if (n < 0) error("ERROR reading from socket");
+    if (sendMessage(socketPlayer1, "hrac1") == -1) {
+        return 1;
+    }
+    if (receiveMessage(socketPlayer1, buffer) == -1) {
+        return 1;
+    }
 
     socketPlayer2 = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
     if (socketPlayer2 < 0)
         error("ERROR on accept");
 
-    // Pošli správu druhému hráčovi, že je hráč 2
-    char *player2Message = "hrac2";
-    write(socketPlayer2, player2Message, strlen(player2Message));
+    if (sendMessage(socketPlayer2, "hrac2") == -1) {
+        return 1;
+    }
+    if (sendMessage(socketPlayer2, buffer) == -1) {
+        return 1;
+    }
+    if (receiveMessage(socketPlayer2, buffer) == -1) {
+        return 1;
+    }
+    if (sendMessage(socketPlayer1, buffer) == -1) {
+        return 1;
+    }
 
-    n = write(socketPlayer2, buffer, 255);
-    if (n < 0) error("ERROR writing to socket");
-
-    n = read(socketPlayer2, buffer, 255);
-    if (n < 0) error("ERROR reading from socket");
-
-    n = write(socketPlayer1, buffer, 255);
-    if (n < 0) error("ERROR writing to socket");
-
-
+    // Game loop
     while (1) {
-        bzero(buffer, 256);
-        n = read(socketPlayer1, buffer, 255);
-        if (n < 0) error("ERROR reading from socket");
+        if (receiveMessage(socketPlayer1, buffer) == -1) {
+            break;
+        }
         if (strcmp(buffer,"END") == 0) {
             break;
         }
-        n = write(socketPlayer2, buffer, 255);
-        if (n < 0) error("ERROR writing to socket");
+        if (sendMessage(socketPlayer2, buffer) == -1) {
+            break;
+        }
 
         printf("Player 1 Position: %s\n", buffer);
-        bzero(buffer, 256);
 
-        n = read(socketPlayer2, buffer, 255);
-        if (n < 0) error("ERROR reading from socket");
+        if (receiveMessage(socketPlayer2, buffer) == -1) {
+            break;
+        }
         if (strcmp(buffer,"END") == 0) {
             break;
         }
-        n = write(socketPlayer1, buffer, 255);
-        if (n < 0) error("ERROR writing to socket");
+        if (sendMessage(socketPlayer1, buffer) == -1) {
+            break;
+        }
 
         printf("Player 2 Position: %s\n", buffer);
     }
+
     close(socketPlayer1);
     close(socketPlayer2);
     close(sockfd);
